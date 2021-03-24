@@ -1,5 +1,5 @@
 [package]
-name = "sku_image_processer"
+name = "sku_imgprocesser_microservice"
 version = "0.1.0"
 authors = ["Peter Mezei <mezeipetister@gmail.com>"]
 edition = "2018"
@@ -7,3 +7,9 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+gzlib = "*"
+prost = "0.6"
+rand = "*"
+serde = {version = "1.0", features = ["derive"]}
+tokio = {version = "0.2", features = ["full"]}
+tonic = "0.3"

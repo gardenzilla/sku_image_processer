@@ -1,6 +1,7 @@
 FROM fedora:33
 WORKDIR /usr/local/bin
-COPY ./target/release/purchase_microservice /usr/local/bin/purchase_microservice
+COPY ./target/release/sku_imgprocesser_microservice /usr/local/bin/sku_imgprocesser_microservice
 RUN dnf install curl -y
+RUN dnf install ImageMagick -y
 STOPSIGNAL SIGINT
-ENTRYPOINT ["purchase_microservice"]
+ENTRYPOINT ["sku_imgprocesser_microservice"]

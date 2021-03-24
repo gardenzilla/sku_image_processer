@@ -4,7 +4,7 @@
 release:
 	cargo update
 	cargo build --release
-	strip target/release/sku_image_processer
+	strip target/release/sku_imgprocesser_microservice
 
 build:
 	cargo update

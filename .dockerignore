@@ -1,4 +1,4 @@
 data/
 target/
-!target/release/purchase_microservice
+!target/release/sku_imgprocesser_microservice
 Cargo.lock
