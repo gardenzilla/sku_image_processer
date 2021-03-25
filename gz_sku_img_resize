@@ -1,0 +1,12 @@
+#!/bin/bash
+
+rm -rf output
+mkdir -p output
+
+XL=./output/xl_${1}
+
+convert $1 -resize 1024x1024^ -quality 85 $XL
+convert $XL -resize 512x512^ -quality 85 ./output/l_${1}
+convert $XL -resize 256x256^ -quality 85 ./output/m_${1}
+convert $XL -resize 128x128^ -quality 85 ./output/s_${1}
+convert $XL -resize 64x64^ -quality 85 ./output/xs_${1}
