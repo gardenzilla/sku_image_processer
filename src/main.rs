@@ -1,15 +1,8 @@
 use gzlib::proto::sku_image_processer::sku_image_processer_server::*;
 use std::error::Error;
 use std::{env, path::Path};
-use tempdir::TempDir;
-use tokio::{
-  fs::{copy, read_dir},
-  process::Command,
-};
-use tokio::{
-  fs::{create_dir, remove_file},
-  prelude::*,
-};
+use tokio::{fs::read_dir, process::Command};
+use tokio::{fs::remove_file, prelude::*};
 use tokio::{
   fs::{create_dir_all, File},
   sync::oneshot,
