@@ -2,7 +2,6 @@ use gzlib::proto::sku_image_processer::sku_image_processer_server::*;
 use std::error::Error;
 use std::{env, path::Path};
 use tempdir::TempDir;
-use tokio::{fs::File, sync::oneshot};
 use tokio::{
   fs::{copy, read_dir},
   process::Command,
@@ -10,6 +9,10 @@ use tokio::{
 use tokio::{
   fs::{create_dir, remove_file},
   prelude::*,
+};
+use tokio::{
+  fs::{create_dir_all, File},
+  sync::oneshot,
 };
 use tonic::{transport::Server, Request, Response, Status};
 
@@ -29,44 +32,38 @@ impl SkuImageProcesser for SkuImageService {
     request: Request<proto::sku_image_processer::AddRequest>,
   ) -> Result<Response<()>, Status> {
     let r = request.into_inner();
-    let tmp_dir = TempDir::new("sku_image_temp")?;
-    let image_path = tmp_dir.path().join(r.image_id);
 
-    // 1. Store temp
-    // Create image file
-    let mut image_file = File::create(image_path.clone()).await?;
-    // Write image bytes into it
+    // Create dir all ORIGINAL if necessary
+    create_dir_all(Path::new("data").join(r.sku.to_string()).join("original"))
+      .await
+      .map_err(|_| Status::internal("Error while create sku directory in static space ALL"))?;
+
+    // Create dir all SIZED if necessary
+    create_dir_all(Path::new("data").join(r.sku.to_string()).join("sized"))
+      .await
+      .map_err(|_| Status::internal("Error while create sku directory in static space ALL"))?;
+
+    let image_file_path = Path::new("data")
+      .join(r.sku.to_string())
+      .join("original")
+      .join(r.image_id);
+
+    // 1. Store original image file
+    let mut image_file = File::create(&image_file_path).await?;
+
+    // Write data into new image file
     image_file
       .write_all(&r.image_bytes)
       .await
       .map_err(|_| Status::internal("Error while writing new file bytes into file"))?;
 
     // 2. Resize, produce result images
-    let child = Command::new("./resize_script").arg(image_path).spawn();
+    let child = Command::new("img_process.sh").arg(&image_file_path).spawn();
+
     // Make sure our child succeeded in spawning and process the result
     let _ = child
       .map_err(|_| Status::internal("Error while processing and resizing SKU images"))?
       .await?;
-
-    // 3. Create sku dir if not exist yet
-    create_dir(&format!("data/{}", r.sku))
-      .await
-      .map_err(|_| Status::internal("Error while create sku directory in static space ALL"))?;
-
-    // 4. Copy files to static server
-    let mut d = read_dir(tmp_dir.path().join("output")).await.map_err(|_| {
-      Status::internal(
-        "Error while loading temp dir output folder; during image resize bg process.",
-      )
-    })?;
-
-    while let Some(e) = d.next_entry().await? {
-      copy(
-        e.path(),
-        Path::new("data").join(r.sku.to_string()).join(e.path()),
-      )
-      .await?;
-    }
 
     Ok(Response::new(()))
   }
@@ -79,7 +76,7 @@ impl SkuImageProcesser for SkuImageService {
     // 2. If yes, remove it
     let r = request.into_inner();
 
-    let mut d = read_dir(Path::new("data").join(r.sku.to_string()))
+    let mut d = read_dir(Path::new("data").join(r.sku.to_string()).join("sized"))
       .await
       .map_err(|_| {
         Status::internal("Error while loading SKU static folder; during IMG removal process.")
