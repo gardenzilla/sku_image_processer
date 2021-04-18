@@ -2,7 +2,7 @@ use gzlib::proto::sku_image_processer::sku_image_processer_server::*;
 use std::error::Error;
 use std::{env, path::Path};
 use tokio::{fs::read_dir, process::Command};
-use tokio::{fs::remove_file, prelude::*};
+use tokio::{fs::remove_file, io::AsyncWriteExt};
 use tokio::{
   fs::{create_dir_all, File},
   sync::oneshot,
@@ -56,6 +56,7 @@ impl SkuImageProcesser for SkuImageService {
     // Make sure our child succeeded in spawning and process the result
     let _ = child
       .map_err(|_| Status::internal("Error while processing and resizing SKU images"))?
+      .wait()
       .await?;
 
     Ok(Response::new(()))
